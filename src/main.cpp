@@ -7,10 +7,12 @@ void setup() {
   Serial.begin(115200);
   
   // Ждем подключения USB CDC (важно для ESP32-S3)
-  while(!Serial) {
+  // Добавляем таймаут 3 секунды, чтобы не зависнуть навечно
+  unsigned long startWait = millis();
+  while(!Serial && (millis() - startWait < 3000)) {
     delay(10);
   }
-  delay(1000);
+  delay(2000); // Увеличиваем задержку, чтобы терминал успел "проснуться"
   
   Serial.println("\n=================================");
   Serial.println("   ESP32-S3-N16R8 Memory Test");
@@ -66,7 +68,8 @@ void testPSRAM() {
   
   // Выделяем память в PSRAM
   uint32_t start = micros();
-  uint8_t* psram_buffer = (uint8_t*)ps_malloc(test_size);
+  // Используем heap_caps_malloc для явного указания типа памяти (SPIRAM)
+  uint8_t* psram_buffer = (uint8_t*)heap_caps_malloc(test_size, MALLOC_CAP_SPIRAM);
   uint32_t alloc_time = micros() - start;
   
   if (psram_buffer) {
